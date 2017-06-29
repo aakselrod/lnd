@@ -107,7 +107,8 @@ imports:
   - hdkeychain
   - txsort
 - name: github.com/roasbeef/btcwallet
-  version: 619ff8707c1d656061ab68db882205c4f63e19df
+  repo: https://github.com/aakselrod/btcwallet
+  version: 16e51e0d08d00030feabb540cfcb05095e5e814e
   subpackages:
   - chain
   - internal/helpers
