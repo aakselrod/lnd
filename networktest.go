@@ -804,6 +804,7 @@ func (n *networkHarness) SetUp() error {
 	expectedBalance := int64(btcutil.SatoshiPerBitcoin * 10)
 	balReq := &lnrpc.WalletBalanceRequest{}
 	balanceTicker := time.Tick(time.Millisecond * 50)
+	balanceTimeout := time.After(time.Second * 30)
 out:
 	for {
 		select {
@@ -821,7 +822,7 @@ out:
 				bobResp.Balance == expectedBalance {
 				break out
 			}
-		case <-time.After(time.Second * 30):
+		case <-balanceTimeout:
 			return fmt.Errorf("balances not synced after deadline")
 		}
 	}
