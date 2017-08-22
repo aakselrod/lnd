@@ -66,7 +66,7 @@ func (a *ChannelAnnouncement) Decode(r io.Reader, pver uint32) error {
 		&a.BitcoinSig1,
 		&a.BitcoinSig2,
 		&a.Features,
-		a.ChainHash[:],
+		//a.ChainHash[:],
 		&a.ShortChannelID,
 		&a.NodeID1,
 		&a.NodeID2,

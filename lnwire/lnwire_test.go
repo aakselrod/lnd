@@ -3,6 +3,7 @@ package lnwire
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"math"
 	"math/big"
 	"math/rand"
@@ -607,4 +608,18 @@ func TestLightningWireProtocol(t *testing.T) {
 		}
 	}
 
+}
+
+func TestKek(t *testing.T) {
+	x := "01000e3a2a9376c229a1431e87d8afba0be2d151ffe46ec5aba846efd61159925dde47f277e7bf124807ef2dda4632912de3c9c6bd9f367be588b7be541e4e2ae82cce438995e84341bcc99674bec1540a857c20f1efbc218bf732e5e5cbfb4d1f0a547a2b1688cb111cfdfd5bebb95dbb6d97759e5924223bb61f95f56ced626a0fe600d1cff35e5b16a078e0973679139798652e5dc2ae64c3fbb925022c429b6e5d92bf3f2db75990e5ca4979232d228a6fbab9af9ac84f46f2cdb7425e139605db2db75804b7f0d7f35859a174a22abfd0fdb4baa603da0ed6c02a19a282db8d28e975b208f86081c17910f8a6ed9f4d893eaa6c95333dccd0e8349d732ff85900000008b60000040001021ef55b7ecbe25de36dbf30ccefaa57af66d527055b571a27ab182486ab46a87502f199e30895012b3d47ec578b526b8d22801682f5f52416b568bfb92f897b1cc003555e9121423a340cb4e272fa937d675463dd0efe252680bc315c4e5678223c110279bc983ebf50c6475275acdf8763e375a756ab21e84363dd86fec0a292b2d603"
+	xBytes, err := hex.DecodeString(x)
+	if err != nil {
+		t.Fatalf("kek")
+	}
+	reader := bytes.NewReader(xBytes)
+	msg, err := ReadMessage(reader, 0)
+	if err != nil {
+		t.Fatalf("can't read: %v", err)
+	}
+	fmt.Println(spew.Sdump(msg))
 }
