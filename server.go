@@ -1055,6 +1055,7 @@ func newServer(listenAddrs []net.Addr, chanDB *channeldb.DB,
 		MinChanSize:            btcutil.Amount(cfg.MinChanSize),
 		MaxPendingChannels:     cfg.MaxPendingChannels,
 		RejectPush:             cfg.RejectPush,
+		TrustedPush:            cfg.TrustedPush,
 		NotifyOpenChannelEvent: s.channelNotifier.NotifyOpenChannelEvent,
 	})
 	if err != nil {
