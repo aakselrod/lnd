@@ -85,6 +85,12 @@ func ErrNonZeroPushAmount() ReservationError {
 	return ReservationError{errors.New("Non-zero push amounts are disabled")}
 }
 
+// ErrZeroConfSpendablePushDisabled is returned by a remote peer that receives
+// a FundingOpen request for a channel while they have 'trustedpush' disabled.
+func ErrZeroConfSpendablePushDisabled() ReservationError {
+	return ReservationError{errors.New("Zero-conf spendable push is disabled")}
+}
+
 // ErrMinHtlcTooLarge returns an error indicating that the MinHTLC value the
 // remote required is too large to be accepted.
 func ErrMinHtlcTooLarge(minHtlc,
