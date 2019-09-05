@@ -17,6 +17,11 @@ const (
 	// initiator of a funding flow wishes to announce the channel to the
 	// greater network.
 	FFAnnounceChannel FundingFlag = 1 << iota
+
+	// FFZeroConfSpendablePush is a FundingFlag that when set, indicates
+	// the initiator of a funding flow will permit the pushed balance to
+	// be spent before funding is locked.
+	FFZeroConfSpendablePush FundingFlag = 1 << 3
 )
 
 // OpenChannel is the message Alice sends to Bob if we should like to create a
