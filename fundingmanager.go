@@ -345,6 +345,10 @@ type fundingConfig struct {
 	// incoming channels having a non-zero push amount.
 	RejectPush bool
 
+	// TrustedPush is set true if the fundingmanager should set the
+	// FFZeroConfSpendablePush funding flag.
+	TrustedPush bool
+
 	// NotifyOpenChannelEvent informs the ChannelNotifier when channels
 	// transition from pending open to open.
 	NotifyOpenChannelEvent func(wire.OutPoint)
@@ -1070,6 +1074,13 @@ func (f *fundingManager) handleFundingOpen(fmsg *fundingOpenMsg) {
 			fmsg.peer, fmsg.msg.PendingChannelID,
 			lnwallet.ErrNonZeroPushAmount())
 		return
+	}
+
+	// If request specifies trusted push and 'trustedpush' isn't set,
+	// signal an error.
+	trustedPushRequested := (msg.ChannelFlags & lnwire.
+		FFZeroConfSpendablePush) != 0
+	if !f.cfg.TrustedPush && trustedPushRequested {
 	}
 
 	fndgLog.Infof("Recv'd fundingRequest(amt=%v, push=%v, delay=%v, "+
@@ -2796,6 +2807,12 @@ func (f *fundingManager) handleInitFundingMsg(msg *initFundingMsg) {
 	if !msg.openChanReq.private {
 		// This channel will be announced.
 		channelFlags = lnwire.FFAnnounceChannel
+	}
+
+	// We also set the FFZeroConfSpendablePush flag if we're pushing funds
+	// and we're configured to allow trusted push.
+	if f.cfg.TrustedPush {
+		channelFlags |= lnwire.FFZeroConfSpendablePush
 	}
 
 	// Initialize a funding reservation with the local wallet. If the
