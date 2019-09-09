@@ -2744,6 +2744,84 @@ func TestFundingManagerRejectPush(t *testing.T) {
 	}
 }
 
+// TestFundingManagerTrustedPush checks behaviour of 'trustedpush'
+// option, namely that trusted push is negotiated when enabled and
+// an amount is pushed. We allow the funding workflow to time out
+// after that point.
+func TestFundingManagerTrustedPush(t *testing.T) {
+	t.Parallel()
+
+	// Enable 'rejectpush' option and initialize funding managers.
+	alice, bob := setupFundingManagers(
+		t, func(cfg *fundingConfig) {
+			cfg.TrustedPush = true
+		},
+	)
+	defer tearDownFundingManagers(t, alice, bob)
+
+	// Create a funding request and start the workflow.
+	updateChan := make(chan *lnrpc.OpenStatusUpdate)
+	errChan := make(chan error, 1)
+	initReq := &openChanReq{
+		targetPubkey:    bob.privKey.PubKey(),
+		chainHash:       *activeNetParams.GenesisHash,
+		localFundingAmt: 500000,
+		pushAmt:         lnwire.NewMSatFromSatoshis(10),
+		private:         true,
+		updates:         updateChan,
+		err:             errChan,
+	}
+
+	alice.fundingMgr.initFundingWorkflow(bob, initReq)
+
+	// Alice should have sent the OpenChannel message to Bob.
+	var aliceMsg lnwire.Message
+	select {
+	case aliceMsg = <-alice.msgChan:
+	case err := <-initReq.err:
+		t.Fatalf("error init funding workflow: %v", err)
+	case <-time.After(time.Second * 5):
+		t.Fatalf("alice did not send OpenChannel message")
+	}
+
+	openChannelReq, ok := aliceMsg.(*lnwire.OpenChannel)
+	if !ok {
+		errorMsg, gotError := aliceMsg.(*lnwire.Error)
+		if gotError {
+			t.Fatalf("expected OpenChannel to be sent "+
+				"from bob, instead got error: %v",
+				lnwire.ErrorCode(errorMsg.Data[0]))
+		}
+		t.Fatalf("expected OpenChannel to be sent from "+
+			"alice, instead got %T", aliceMsg)
+	}
+
+	// Check that the ZeroConfSpendablePush flag is set.
+	if (openChannelReq.ChannelFlags & lnwire.FFZeroConfSpendablePush) !=
+		lnwire.FFZeroConfSpendablePush {
+		t.Fatalf("Expected ZeroConfSpendablePush set; it is not.")
+	}
+
+	// Let Bob handle the init message.
+	bob.fundingMgr.processFundingOpen(openChannelReq, alice)
+
+	// Bob should answer with an AcceptChannel.
+	assertFundingMsgSent(t, bob.msgChan, "AcceptChannel")
+
+	// Bob should have a new pending reservation.
+	assertNumPendingReservations(t, bob, alicePubKey, 1)
+
+	// Make sure Bob's reservation times out and then run his zombie sweeper.
+	time.Sleep(1 * time.Millisecond)
+	go bob.fundingMgr.pruneZombieReservations()
+
+	// Bob should have sent an Error message to Alice.
+	assertErrorSent(t, bob.msgChan)
+
+	// Bob's zombie reservation should have been pruned.
+	assertNumPendingReservations(t, bob, alicePubKey, 0)
+}
+
 // TestFundingManagerMaxConfs ensures that we don't accept a funding proposal
 // that proposes a MinAcceptDepth greater than the maximum number of
 // confirmations we're willing to accept.
